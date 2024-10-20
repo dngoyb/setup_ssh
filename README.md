@@ -1,4 +1,3 @@
-````markdown
 # SSH Key Setup Script
 
 ## Overview
@@ -27,7 +26,6 @@ This script automates the process of generating SSH keys for GitHub and GitLab, 
    ```bash
    ./setup_ssh.sh
    ```
-````
 
 2. **Follow the Prompts**:
 
@@ -110,7 +108,3 @@ ssh -T git@gitlab.com
 ```
 
 You should also see a message confirming successful authentication.
-
-```
-
-```
