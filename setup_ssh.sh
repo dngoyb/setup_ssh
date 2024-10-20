@@ -1,17 +1,67 @@
 #!/bin/bash
 
+# Function to identify the OS
+detect_os() {
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "Linux"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "MacOS"
+    elif [[ "$OSTYPE" == "cygwin" ]]; then
+        echo "Cygwin"
+    elif [[ "$OSTYPE" == "msys" ]]; then
+        echo "Mingw"
+    else
+        echo "Unknown OS"
+        exit 1
+    fi
+}
+
+# Detect the operating system
+os_type=$(detect_os)
+echo "Detected operating system: $os_type"
+
+echo "________________________________________________________________________________"
+echo ""
+
 # Prompt for emails for SSH keys
 read -p "Enter your GitHub email for the SSH key: " github_email
 read -p "Enter your GitLab email for the SSH key: " gitlab_email
 
-# Generate SSH keys for GitHub
-echo "Generating SSH key for GitHub..."
-ssh-keygen -t rsa -b 4096 -C "$github_email" -f ~/.ssh/id_rsa_github -N ""
+# Prompt for Git username
+read -p "Enter your Git username: " git_username
 
-# Generate SSH keys for GitLab
-echo "Generating SSH key for GitLab..."
-ssh-keygen -t rsa -b 4096 -C "$gitlab_email" -f ~/.ssh/id_rsa_gitlab -N ""
+# Prompt for preferred Git email (GitHub or GitLab)
+read -p "Which email do you want to set as your Git global email? (1 for GitHub, 2 for GitLab): " email_choice
 
+echo "________________________________________________________________________________"
+echo ""
+
+# Function to generate SSH keys
+generate_ssh_key() {
+    local email=$1
+    local file=$2
+    echo "Generating SSH key for $file..."
+    ssh-keygen -t rsa -b 4096 -C "$email" -f "$file" -N "" || {
+        echo "Failed to generate SSH key for $file."
+        exit 1
+    }
+}
+
+# Check if keys already exist
+if [ -f ~/.ssh/id_rsa_github ]; then
+    echo "SSH key for GitHub already exists at ~/.ssh/id_rsa_github. Skipping generation."
+else
+    generate_ssh_key "$github_email" ~/.ssh/id_rsa_github
+fi
+
+if [ -f ~/.ssh/id_rsa_gitlab ]; then
+    echo "SSH key for GitLab already exists at ~/.ssh/id_rsa_gitlab. Skipping generation."
+else
+    generate_ssh_key "$gitlab_email" ~/.ssh/id_rsa_gitlab
+fi
+
+echo "________________________________________________________________________________"
+echo ""
 # Start the SSH agent
 eval "$(ssh-agent -s)"
 
@@ -19,6 +69,8 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_rsa_github
 ssh-add ~/.ssh/id_rsa_gitlab
 
+echo "________________________________________________________________________________"
+echo ""
 # Create or update the SSH config file
 config_file=~/.ssh/config
 
@@ -46,6 +98,9 @@ fi
 # Set permissions for the SSH config file
 chmod 600 "$config_file"
 
+echo "________________________________________________________________________________"
+echo ""
+
 # Display the public keys
 echo "Your GitHub public key (copy this to GitHub):"
 cat ~/.ssh/id_rsa_github.pub
@@ -65,6 +120,25 @@ echo "   - Go to GitLab.com > Preferences > SSH Keys"
 echo "   - Paste the GitLab public key and give it a title."
 echo ""
 
+echo "________________________________________________________________________________"
+echo ""
+
+# Set Git global username and email
+git config --global user.name "$git_username"
+
+# Set the preferred Git global email based on user choice
+if [ "$email_choice" -eq 1 ]; then
+    git config --global user.email "$github_email"
+    echo "Git global email set to your GitHub email: $github_email"
+elif [ "$email_choice" -eq 2 ]; then
+    git config --global user.email "$gitlab_email"
+    echo "Git global email set to your GitLab email: $gitlab_email"
+else
+    echo "Invalid choice. No email set for Git global configuration."
+fi
+
+echo "________________________________________________________________________________"
+echo ""
 
 # Instructions for testing SSH connections
 echo "Testing your SSH connection:"
@@ -76,5 +150,3 @@ echo "2. To test your connection to GitLab, run the following command:"
 echo "   ssh -T git@gitlab.com"
 echo "   You should also see a message confirming successful authentication."
 echo ""
-
-
