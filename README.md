@@ -22,7 +22,8 @@ This script automates the process of generating SSH keys for GitHub and GitLab, 
 
 ## Usage
 
-1. **Run the Script**: Open a terminal and execute the script:
+1. **Run the Script**: Open a terminal (use Git Bash if you're on Windows) and execute the script:
+
    ```bash
    ./setup_ssh.sh
    ```
